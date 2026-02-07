@@ -1,0 +1,286 @@
+/* ===============================
+   RESET
+================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ===============================
+   VARIABLES
+================================ */
+:root {
+    --primary: #2563EB;
+    --primary-dark: #1D4ED8;
+    --bg-light: #F8FAFC;
+    --text-dark: #1E293B;
+    --text-light: #64748B;
+    --border: #E2E8F0;
+    --card-bg: #FFFFFF;
+    --success: #15803D;
+    --danger: #DC2626;
+}
+
+/* ===============================
+   BODY (base)
+================================ */
+body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-light);
+}
+
+/* ===============================
+   BACKGROUND IMAGE (login + register uniquement)
+   Image à la hauteur du formulaire
+================================ */
+body.page-auth {
+    justify-content: flex-start;
+    padding-left: 40px;
+}
+
+body.page-auth .login-wrapper,
+body.page-auth .container {
+    position: relative;
+    background: url("3075332.png") no-repeat center center;
+    background-size: cover;
+    border-radius: 16px;
+    padding: 0;
+}
+
+body.page-auth .login-wrapper::before,
+body.page-auth .container::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 16px;
+    z-index: 0;
+    pointer-events: none;
+}
+
+body.page-auth .card {
+    position: relative;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.92);
+}
+
+/* ===============================
+   LOGIN WRAPPER + CONTAINER
+================================ */
+.login-wrapper,
+.container {
+    width: 100%;
+    max-width: 420px;
+}
+
+/* ===============================
+   CARD
+================================ */
+.card {
+    background: var(--card-bg);
+    padding: 40px 36px;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border);
+}
+
+/* ===============================
+   TITRES
+================================ */
+.card-title {
+    font-size: 26px;
+    margin-bottom: 24px;
+    color: var(--text-dark);
+}
+
+/* ===============================
+   INPUTS
+================================ */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.form-control {
+    width: 100%;
+    padding: 13px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ===============================
+   BUTTON LOGIN
+================================ */
+.btn-primary {
+    width: 100%;
+    padding: 13px;
+    background: var(--primary);
+    border: none;
+    color: white;
+    font-size: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 8px;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+}
+
+.btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* ===============================
+   MESSAGE (feedback JS)
+================================ */
+.message {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    min-height: 24px;
+}
+
+.message.text-info {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary);
+}
+
+.message.text-success {
+    background: rgba(21, 128, 61, 0.1);
+    color: var(--success);
+}
+
+.message.text-danger {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--danger);
+}
+
+/* ===============================
+   LOADING SPINNER (JS)
+================================ */
+.loading {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===============================
+   DIVIDER
+================================ */
+.divider {
+    text-align: center;
+    margin: 24px 0;
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+.divider a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.divider a:hover {
+    text-decoration: underline;
+}
+
+/* ===============================
+   SOCIAL LOGIN
+================================ */
+.social-login {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.btn-google {
+    display: block;
+    text-align: center;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    text-decoration: none;
+    color: #444;
+    font-weight: 500;
+    transition: 0.2s;
+    background: white;
+}
+
+.btn-google:hover {
+    background: #F1F5F9;
+}
+
+.btn-facebook {
+    display: block;
+    text-align: center;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    background: #1877F2;
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: 0.2s;
+}
+
+.btn-facebook:hover {
+    background: #0F5ED7;
+}
+
+/* ===============================
+   RESPONSIVE
+================================ */
+@media (max-width: 900px) {
+    body.page-auth {
+        justify-content: center;
+        padding-left: 0;
+        padding: 20px;
+    }
+
+    .login-wrapper {
+        max-width: 100%;
+    }
+
+    .login-wrapper,
+    .container {
+        max-width: 100%;
+    }
+
+    .card {
+        padding: 32px 24px;
+    }
+}

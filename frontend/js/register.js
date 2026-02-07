@@ -4,6 +4,7 @@ function register() {
     const passwordInput = document.getElementById("password");
     const msgEl = document.getElementById("msg");
     const registerBtn = document.getElementById("registerBtn");
+    const confirmPassInput = document.getElementById("confirmpass");
 
     // Validation
     if (!usernameInput.value.trim() || !emailInput.value.trim() || !passwordInput.value.trim()) {
@@ -15,6 +16,11 @@ function register() {
     if (passwordInput.value.length < 6) {
         msgEl.className = "message text-info";
         msgEl.innerText = "⚠️ Le mot de passe doit contenir au moins 6 caractères";
+        return;
+    }
+    if (passwordInput.value !== confirmPassInput.value) {
+        msgEl.className = "message text-info";
+        msgEl.innerText = "⚠️ Les mots de passe ne correspondent pas";
         return;
     }
 

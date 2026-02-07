@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact - app</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #075b65;
+            --secondary: #1D3557;
+            --accent: #F1FAEE;
+            --dark: #0A0E27;
+            --light: #FEFEFE;
+            --gradient: linear-gradient(135deg, #0b585b 0%, #085058 100%);
+            --shadow: 0 20px 60px rgba(230, 57, 70, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Background Effect */
+        .background-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(230, 57, 70, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(230, 57, 70, 0.03) 1px, transparent 1px);
+            background-size: 80px 80px;
+            z-index: -1;
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(80px, 80px); }
+        }
+
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.05;
+            border-radius: 50%;
+            background: var(--gradient);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            top: -200px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            width: 300px;
+            height: 300px;
+            bottom: -150px;
+            left: -80px;
+            animation-delay: 5s;
+        }
+
+        .shape:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 50%;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -50px) rotate(120deg); }
+            66% { transform: translate(-20px, 30px) rotate(240deg); }
+        }
+
+        /* Header */
+        header {
+            padding: 10px;
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 900;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 5%;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 6rem;
+            align-items: start;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Left Section */
+        .contact-info {
+            position: sticky;
+            top: 100px;
+        }
+
+        .section-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            letter-spacing: -2px;
+        }
+
+        .highlight {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .intro-text {
+            font-size: 1.1rem;
+            color: rgba(254, 254, 254, 0.7);
+            margin-bottom: 3rem;
+            line-height: 1;
+        }
+
+        .info-card {
+            background: rgba(29, 53, 87, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(230, 57, 70, 0.1);
+            border-radius: 16px;
+            padding: 10px;
+            margin-bottom: 1.5rem;
+            transition: all 0.4s ease;
+        }
+
+        .info-card:hover {
+            transform: translateX(10px);
+            border-color: rgba(230, 57, 70, 0.4);
+            box-shadow: var(--shadow);
+        }
+
+        .info-card h3 {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-card p {
+            font-size: 1.1rem;
+            color: var(--light);
+        }
+
+        .info-card a {
+            color: var(--light);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .info-card a:hover {
+            color: var(--primary);
+        }
+
+        /* Right Section - Form */
+        .contact-form-wrapper {
+            background: rgba(29, 53, 87, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(230, 57, 70, 0.15);
+            border-radius: 24px;
+            padding: 10px;
+            box-shadow: var(--shadow);
+            animation: slideIn 1s ease-out 0.3s both;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .form-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .form-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: rgba(254, 254, 254, 0.6);
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease-out both;
+        }
+
+        .form-group:nth-child(1) { animation-delay: 0.4s; }
+        .form-group:nth-child(2) { animation-delay: 0.5s; }
+        .form-group:nth-child(3) { animation-delay: 0.6s; }
+        .form-group:nth-child(4) { animation-delay: 0.7s; }
+        .form-group:nth-child(5) { animation-delay: 0.8s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        label {
+            display: block;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            background: rgba(10, 14, 39, 0.6);
+            border: 2px solid rgba(230, 57, 70, 0.2);
+            border-radius: 12px;
+            color: var(--light);
+            font-size: 1rem;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.1);
+            transform: translateY(-2px);
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23E63946' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 20px;
+            padding-right: 3rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            text-transform: none;
+            font-family: 'DM Sans', sans-serif;
+            letter-spacing: 0;
+            color: rgba(254, 254, 254, 0.8);
+            font-weight: 400;
+            font-size: 0.95rem;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 1.25rem 2rem;
+            background: var(--gradient);
+            border: none;
+            border-radius: 12px;
+            color: var(--light);
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Space Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(230, 57, 70, 0.3);
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button[type="submit"]::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        button[type="submit"]:hover::before {
+            left: 100%;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(230, 57, 70, 0.4);
+        }
+
+        button[type="submit"]:active {
+            transform: translateY(-1px);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+
+            .contact-info {
+                position: relative;
+                top: 0;
+            }
+
+            h1 {
+                font-size: 3rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .contact-form-wrapper {
+                padding: 2rem;
+            }
+
+            .container {
+                padding: 2rem 5%;
+            }
+        }
+
+        /* Success Animation */
+        @keyframes success {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .success-message {
+            display: none;
+            background: rgba(72, 187, 120, 0.2);
+            border: 2px solid #48BB78;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            text-align: center;
+            animation: success 0.5s ease-out;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="background-grid"></div>
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">BusinessApp</div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Left Section: Info -->
+        <div class="contact-info">
+            <span class="section-label">Contactez-nous</span>
+            <h1>Restons en <span class="highlight">Contact</span></h1>
+            <p class="intro-text">
+                Notre équipe est à votre disposition pour répondre à toutes vos questions 
+                et vous accompagner dans vos projets. N'hésitez pas à nous contacter.
+            </p>
+
+            <div class="info-card">
+                <h3>Téléphone</h3>
+                <p><a href="tel:+21671000000">+216 71 000 000</a></p>
+            </div>
+
+            <div class="info-card">
+                <h3>Email</h3>
+                <p><a href="mailto:contact@tunisietelecom.tn">contact@gmail.com</a></p>
+            </div>
+
+            <div class="info-card">
+                <h3>Adresse</h3>
+                <p>Avenue xxxxxxxx<br>1002 Tunis, Tunisie</p>
+            </div>
+
+            <div class="info-card">
+                <h3>Horaires</h3>
+                <p>Lundi - Vendredi: 8h - 17h<br>Samedi: 8h - 13h</p>
+            </div>
+        </div>
+
+        <!-- Right Section: Form -->
+        <div class="contact-form-wrapper">
+            <div class="form-header">
+                <h2>Envoyez-nous un message</h2>
+                <p>Remplissez le formulaire ci-dessous et nous vous répondrons dans les plus brefs délais.</p>
+            </div>
+
+            <form id="contactForm">
+                <div class="form-group">
+                    <label for="name">Nom complet *</label>
+                    <input type="text" id="name" name="name" required placeholder="prénom et nom">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" required placeholder="exemple@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Téléphone</label>
+                    <input type="tel" id="phone" name="phone" placeholder="+216 XX XXX XXX">
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">Sujet *</label>
+                    <select id="subject" name="subject" required>
+                        <option value="">Sélectionnez un sujet</option>
+                        <option value="commercial">Demande commerciale</option>
+                        <option value="technique">Support technique</option>
+                        <option value="facturation">Questions de facturation</option>
+                        <option value="partenariat">Opportunité de partenariat</option>
+                        <option value="reclamation">Réclamation</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message *</label>
+                    <textarea id="message" name="message" required placeholder="Décrivez votre demande..."></textarea>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="newsletter" name="newsletter">
+                    <label for="newsletter">J'accepte de recevoir des communications marketing de Tunisie Telecom</label>
+                </div>
+
+                <button type="submit">Envoyer le message</button>
+
+                <div class="success-message" id="successMessage">
+                    ✓ Merci ! Votre message a été envoyé avec succès. Nous vous répondrons bientôt.
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Form Handling
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Simulate form submission
+            const button = this.querySelector('button[type="submit"]');
+            const originalText = button.textContent;
+            button.textContent = 'Envoi en cours...';
+            button.disabled = true;
+
+            setTimeout(() => {
+                // Show success message
+                document.getElementById('successMessage').classList.add('show');
+                button.textContent = originalText;
+                button.disabled = false;
+                
+                // Reset form
+                this.reset();
+
+                // Hide success message after 5 seconds
+                setTimeout(() => {
+                    document.getElementById('successMessage').classList.remove('show');
+                }, 5000);
+            }, 1500);
+        });
+
+        // Add smooth animations on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.info-card, .form-group').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

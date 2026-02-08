@@ -11,8 +11,8 @@
    VARIABLES
 ================================ */
 :root {
-    --primary: #2563EB;
-    --primary-dark: #1D4ED8;
+    --primary: #127389;
+    --primary-dark: #0e6f84;
     --bg-light: #F8FAFC;
     --text-dark: #1E293B;
     --text-light: #64748B;
@@ -37,10 +37,9 @@ body {
 ================================ */
 body.page-auth {
     position: relative;
-    background: url("assets/3079839.jpg") no-repeat center center;
+    background: url("3079839.jpg") no-repeat center center;
     background-size: cover;
     display: flex;
-    align-items: stretch;
 }
 
 body.page-auth::before {

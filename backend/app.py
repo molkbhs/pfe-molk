@@ -1,7 +1,8 @@
 """
-Flask backend complet - Auth + Profile + Dashboard
+Flask Backend with Fixed Google OAuth
 """
-
+from authlib.integrations.flask_client import OAuth
+from flask import redirect, url_for
 from datetime import datetime, timedelta
 from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory, Response
@@ -10,12 +11,191 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from db import get_connection
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 FRONTEND = Path(__file__).resolve().parent.parent / "frontend"
 
+# =====================================================
+# SESSION & OAUTH CONFIG
+# =====================================================
+app.secret_key = "super_secret_key"
 
-# ==================== DATABASE HELPERS ====================
+oauth = OAuth(app)
+
+google = oauth.register(
+    name='google',
+    client_id='714067888906-r7iqfn0v80s1el45cc678u5m3lvep6bv.apps.googleusercontent.com',
+    client_secret='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',
+    access_token_url='https://oauth2.googleapis.com/token',
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    api_base_url='https://www.googleapis.com/oauth2/v2/',
+    client_kwargs={
+        'scope': 'openid email profile'
+    },
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration'
+)
+
+# =====================================================
+# GOOGLE OAUTH ROUTES
+# =====================================================
+
+@app.route("/api/auth/google")
+def google_login():
+    """Initiate Google OAuth flow"""
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+
+@app.route("/api/auth/google/callback")
+def google_callback():
+    """Handle Google OAuth callback"""
+    try:
+        # Get access token (Authlib OIDC includes userinfo in token when using server_metadata_url)
+        token = google.authorize_access_token()
+        
+        # User info: Authlib may include it in token, or we fetch it
+        user_info = token.get('userinfo') or {}
+        if not user_info and token.get('access_token'):
+            resp = google.get('userinfo', token=token)
+            user_info = resp.json() if resp else {}
+
+        email = user_info.get("email", "")
+        firstname = user_info.get("given_name", "")
+        lastname = user_info.get("family_name", "")
+        
+        if not email:
+            raise ValueError("Google n'a pas fourni d'email")
+
+        # Generate username from email (part before @)
+        username = email.split('@')[0] if email else f"{firstname.lower()}{lastname.lower()}"
+
+        # Base URL for redirect (works whether served from 5000 or 5500)
+        base_url = request.url_root.rstrip('/')
+
+        # Check if user exists in database
+        user = run_query(
+            "SELECT id, firstname, lastname, email FROM users WHERE email=%s",
+            (email,),
+            True
+        )
+
+        if not user:
+            # Create new user with empty password and login_type (OAuth user)
+            try:
+                user_id = run_update(
+                    """INSERT INTO users (firstname, lastname, email, password, login_type, created_at)
+                       VALUES (%s, %s, %s, %s, 'google', NOW())""",
+                    (firstname, lastname, email, "")  # Empty password for OAuth users
+                )
+            except Exception:
+                user_id = run_update(
+                    """INSERT INTO users (firstname, lastname, email, password, created_at)
+                       VALUES (%s, %s, %s, %s, NOW())""",
+                    (firstname, lastname, email, "")  # Fallback if login_type column missing
+                )
+
+            user = {
+                "id": user_id,
+                "firstname": firstname,
+                "lastname": lastname,
+                "email": email
+            }
+
+        # Prepare user data for frontend
+        user_data = {
+            "id": user["id"],
+            "username": username,
+            "firstname": user["firstname"],
+            "lastname": user["lastname"],
+            "email": user["email"],
+            "role": "Utilisateur"
+        }
+
+        # Create HTML page that will store user data in localStorage and redirect
+        redirect_url = f"{base_url}/dashboard.html"
+        html_response = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Authentication Success</title>
+        </head>
+        <body>
+            <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+                <h2>Connexion réussie !</h2>
+                <p>Redirection vers le dashboard...</p>
+            </div>
+            <script>
+                // Store user data in localStorage
+                const userData = {user_data};
+                localStorage.setItem('user', JSON.stringify(userData));
+                
+                // Redirect to dashboard (same origin as backend)
+                setTimeout(function() {{
+                    window.location.href = '{redirect_url}';
+                }}, 1000);
+            </script>
+        </body>
+        </html>
+        """.replace('{user_data}', str(user_data).replace("'", '"'))
+        
+        return html_response
+
+    except Exception as e:
+        # Error handling - redirect to login with error message
+        base_url = request.url_root.rstrip('/')
+        login_url = f"{base_url}/index.html"
+        error_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Authentication Error</title>
+        </head>
+        <body>
+            <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+                <h2 style="color: red;">Erreur d'authentification</h2>
+                <p>{str(e)}</p>
+                <p>Redirection vers la page de connexion...</p>
+            </div>
+            <script>
+                setTimeout(function() {{
+                    window.location.href = '{login_url}';
+                }}, 3000);
+            </script>
+        </body>
+        </html>
+        """
+        return error_html
+
+
+# =====================================================
+# CONTACT
+# =====================================================
+
+@app.route("/api/contact", methods=["POST"])
+def contact():
+    """Traite le formulaire de contact"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "Données manquantes"}), 400
+
+        name = (data.get("name") or "").strip()
+        email = (data.get("email") or "").strip()
+        subject = (data.get("subject") or "").strip()
+        message = (data.get("message") or "").strip()
+
+        if not name or not email or not subject or not message:
+            return jsonify({"success": False, "error": "Tous les champs obligatoires sont requis"}), 400
+
+        # Réponse succès (à personnaliser : envoi email, stockage en DB, etc.)
+        return jsonify({"success": True, "message": "Message envoyé avec succès"}), 201
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# =====================================================
+# DATABASE HELPERS
+# =====================================================
 
 def run_query(query, params=None, fetch_one=False):
     conn = None
@@ -46,43 +226,44 @@ def run_update(query, params=None):
             conn.close()
 
 
-# ==================== AUTH ====================
+# =====================================================
+# AUTH
+# =====================================================
 
 @app.route("/api/register", methods=["POST"])
 def register():
     data = request.get_json()
 
-    username = data.get("username", "").strip()
+    firstname = data.get("firstname", "").strip()
+    lastname = data.get("lastname", "").strip()
     email = data.get("email", "").strip()
     password = data.get("password", "")
 
-    if not username or not email or not password:
+    if not firstname or not lastname or not email or not password:
         return jsonify({"error": "Tous les champs sont requis"}), 400
 
     if len(password) < 6:
         return jsonify({"error": "Mot de passe minimum 6 caractères"}), 400
 
-    # Vérifications
+    # Vérifier email unique
     if run_query("SELECT id FROM users WHERE email=%s", (email,), True):
         return jsonify({"error": "Email déjà utilisé"}), 409
-
-    if run_query("SELECT id FROM users WHERE username=%s", (username,), True):
-        return jsonify({"error": "Username déjà pris"}), 409
 
     hashed_password = generate_password_hash(password)
 
     try:
         user_id = run_update(
-            """INSERT INTO users (username, email, password, created_at)
-               VALUES (%s, %s, %s, NOW())""",
-            (username, email, hashed_password)
+            """INSERT INTO users (firstname, lastname, email, password, created_at)
+               VALUES (%s, %s, %s, %s, NOW())""",
+            (firstname, lastname, email, hashed_password)
         )
 
         return jsonify({
             "message": "Inscription réussie",
             "user": {
                 "id": user_id,
-                "username": username,
+                "firstname": firstname,
+                "lastname": lastname,
                 "email": email
             }
         }), 201
@@ -102,7 +283,7 @@ def login():
         return jsonify({"error": "Email et mot de passe requis"}), 400
 
     user = run_query(
-        "SELECT id, username, email, password FROM users WHERE email=%s",
+        "SELECT id, firstname, lastname, email, password FROM users WHERE email=%s",
         (email,),
         True
     )
@@ -110,28 +291,39 @@ def login():
     if not user or not check_password_hash(user["password"], password):
         return jsonify({"error": "Email ou mot de passe incorrect"}), 401
 
+    # Generate username from email
+    username = email.split('@')[0]
+
     return jsonify({
         "message": "Connexion réussie",
         "user": {
             "id": user["id"],
-            "username": user["username"],
-            "email": user["email"]
+            "username": username,
+            "firstname": user["firstname"],
+            "lastname": user["lastname"],
+            "email": user["email"],
+            "role": "Utilisateur"
         }
     })
 
 
-# ==================== PROFILE ====================
+# =====================================================
+# PROFILE
+# =====================================================
 
 @app.route("/api/profile/<int:user_id>", methods=["GET"])
 def get_profile(user_id):
     user = run_query(
-        "SELECT id, username, email, created_at FROM users WHERE id=%s",
+        "SELECT id, firstname, lastname, email, created_at FROM users WHERE id=%s",
         (user_id,),
         True
     )
 
     if not user:
         return jsonify({"error": "Utilisateur non trouvé"}), 404
+
+    if user["created_at"]:
+        user["created_at"] = user["created_at"].strftime("%Y-%m-%d %H:%M")
 
     return jsonify(user)
 
@@ -140,16 +332,17 @@ def get_profile(user_id):
 def update_profile(user_id):
     data = request.get_json()
 
-    username = data.get("username", "").strip()
+    firstname = data.get("firstname", "").strip()
+    lastname = data.get("lastname", "").strip()
     email = data.get("email", "").strip()
 
-    if not username or not email:
-        return jsonify({"error": "Champs requis"}), 400
+    if not firstname or not lastname or not email:
+        return jsonify({"error": "Tous les champs sont requis"}), 400
 
     try:
         run_update(
-            "UPDATE users SET username=%s, email=%s WHERE id=%s",
-            (username, email, user_id)
+            "UPDATE users SET firstname=%s, lastname=%s, email=%s WHERE id=%s",
+            (firstname, lastname, email, user_id)
         )
 
         return jsonify({"message": "Profil mis à jour"})
@@ -166,7 +359,9 @@ def delete_account(user_id):
         return jsonify({"error": str(e)}), 500
 
 
-# ==================== DASHBOARD ====================
+# =====================================================
+# DASHBOARD STATS
+# =====================================================
 
 @app.route("/api/stats", methods=["GET"])
 def stats():
@@ -187,22 +382,49 @@ def stats():
             True
         )["n"]
 
+        # Google vs Email users (login_type from schema_update.sql)
+        try:
+            google_row = run_query(
+                "SELECT COUNT(*) as n FROM users WHERE login_type = 'google'",
+                fetch_one=True
+            )
+            email_row = run_query(
+                "SELECT COUNT(*) as n FROM users WHERE login_type = 'email' OR login_type IS NULL OR login_type = ''",
+                fetch_one=True
+            )
+            google_users = google_row["n"] if google_row else 0
+            email_users = email_row["n"] if email_row else 0
+        except Exception:
+            google_users = 0
+            email_users = total
+
         return jsonify({
             "total_users": total,
             "new_today": today_count,
-            "active_week": week_count
+            "active_week": week_count,
+            "google_users": google_users,
+            "email_users": email_users
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-# ==================== USERS LIST ====================
+# =====================================================
+# USERS LIST (ADMIN)
+# =====================================================
 
 @app.route("/api/users", methods=["GET"])
 def users_list():
-    users = run_query(
-        "SELECT id, username, email, created_at FROM users ORDER BY id DESC"
-    )
+    try:
+        users = run_query(
+            "SELECT id, firstname, lastname, email, created_at, COALESCE(login_type, 'email') as login_type FROM users ORDER BY id DESC"
+        )
+    except Exception:
+        users = run_query(
+            "SELECT id, firstname, lastname, email, created_at FROM users ORDER BY id DESC"
+        )
+        for u in users:
+            u["login_type"] = "email"
 
     for u in users:
         if u["created_at"]:
@@ -211,22 +433,24 @@ def users_list():
     return jsonify(users)
 
 
-# ==================== EXPORT CSV ====================
+# =====================================================
+# EXPORT CSV
+# =====================================================
 
 @app.route("/api/users/export", methods=["GET"])
 def export_users():
     users = run_query(
-        "SELECT id, username, email, created_at FROM users ORDER BY id"
+        "SELECT id, firstname, lastname, email, created_at FROM users ORDER BY id"
     )
 
-    lines = ["id,username,email,created_at"]
+    lines = ["id,firstname,lastname,email,created_at"]
 
     for u in users:
         created = u["created_at"]
         if hasattr(created, "strftime"):
             created = created.strftime("%Y-%m-%d %H:%M")
 
-        lines.append(f"{u['id']},{u['username']},{u['email']},{created}")
+        lines.append(f"{u['id']},{u['firstname']},{u['lastname']},{u['email']},{created}")
 
     csv = "\n".join(lines)
 
@@ -237,7 +461,9 @@ def export_users():
     )
 
 
-# ==================== STATIC ====================
+# =====================================================
+# STATIC FILES
+# =====================================================
 
 @app.route("/")
 def home():
@@ -249,7 +475,9 @@ def serve_static(filename):
     return send_from_directory(FRONTEND, filename)
 
 
-# ==================== RUN ====================
+# =====================================================
+# RUN
+# =====================================================
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

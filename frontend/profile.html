@@ -18,10 +18,21 @@
     .card { 
       max-width: 500px; 
       margin: auto; 
-      border-radius: 10px; 
       text-align: center; 
-      background-color: rgba(255, 255, 255, 0.9); /* léger fond blanc pour lisibilité */
     }
+    .card{
+            background: rgba(29, 53, 87, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(230, 57, 70, 0.15);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            animation: slideIn 1s ease-out 0.3s both;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
 
     .profile-img { 
       width: 120px; 
@@ -38,7 +49,7 @@
        font-weight: bold;
        font-size: 1.5rem;
       color: darkblue;
-      font-family:Georgia, 'Times New Roman', Times, serif;
+      font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
   </style>
 </head>
@@ -77,7 +88,7 @@
 <div class="container mt-5 pt-5">
   <div class="card p-4 shadow">
     <img src="assets\istockphoto-1288129985-612x612.jpg" alt="Photo profil" class="profile-img">
-    <h4 id="username"></h4>
+    <h4 id="firstname"></h4>
     <p id="email" class="text-muted mb-1"></p>
     <p id="role" class="text-secondary mb-3"></p>
 
@@ -112,7 +123,8 @@
   if (!user) window.location.href = 'index.html';
   else {
     // Affichage infos utilisateur
-    document.getElementById('username').innerText = user.username;
+    document.getElementById('firstname').innerText = user.firstname+" "+user.lastname;
+    
     document.getElementById('email').innerText = user.email || 'email@exemple.com';
     document.getElementById('role').innerText = user.role || 'Utilisateur';
     document.getElementById('navUser').innerText = user.username;
@@ -146,14 +158,17 @@
 
   // Fonction déconnexion
   function logout() {
-    localStorage.removeItem('user');
-    window.location.href = 'index.html'; // redirige vers page login
+    localStorage.clear();
+    sessionStorage.clear();
+    const url = (window.location.origin && window.location.origin !== 'null') ? window.location.origin + '/index.html' : 'index.html';
+    window.location.replace(url);
   }
 
   // Événements boutons déconnexion
   document.getElementById('logout').addEventListener('click', logout);
   document.getElementById('logoutNav').addEventListener('click', function(e){
-    e.preventDefault(); // empêche href="#" de défiler
+    e.preventDefault();
+    e.stopPropagation();
     logout();
   });
 </script>

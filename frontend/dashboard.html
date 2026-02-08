@@ -11,12 +11,36 @@
   <style>
     body {
       background-color: #f4f6f9;
+      background-image: url("assets/fyu12.jpg"); 
+      background-size:cover;
+      background-position: center;
+      height: 100%;
     }
 
     .card {
       max-width: 600px;
       margin: auto;
       border-radius: 10px;
+      height: 400px;
+    }
+    .card{
+            background: rgba(29, 53, 87, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(230, 57, 70, 0.15);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            animation: slideIn 1s ease-out 0.3s both;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    .navbar-brand {
+       font-weight: bold;
+       font-size: 1.5rem;
+      color: darkblue;
+      font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
    
   </style>
@@ -47,7 +71,7 @@
           <li><a class="dropdown-item" href="profile.html">Voir le profil</a></li>
           <!-- Paramètres ajouté dynamiquement -->
           <li><hr class="dropdown-divider"></li>
-          <li><button class="dropdown-item text-danger" id="logoutNav">Déconnexion</button></li>
+          <li><button type="button" class="dropdown-item text-danger" id="logoutNav">Déconnexion</button></li>
         </ul>
       </div>
     </div>
@@ -97,13 +121,19 @@
     }
   }
 
-  // Logout
+  // Logout - nettoyage complet et redirection
   function logout() {
-    localStorage.removeItem('user');
-    window.location.href = 'index.html';
+    localStorage.clear();
+    sessionStorage.clear();
+    const url = (window.location.origin && window.location.origin !== 'null') ? window.location.origin + '/index.html' : 'index.html';
+    window.location.replace(url);
   }
   document.getElementById('logout').addEventListener('click', logout);
-  document.getElementById('logoutNav').addEventListener('click', logout);
+  document.getElementById('logoutNav').addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    logout();
+  });
 </script>
 
 </body>

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact - app</title>
+    <title>Contact - BusinessApp</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #075b65;
             --secondary: #1D3557;
             --accent: #F1FAEE;
-            --dark: #0A0E27;
+            --dark: #110649;
             --light: #FEFEFE;
             --gradient: linear-gradient(135deg, #0b585b 0%, #085058 100%);
             --shadow: 0 20px 60px rgba(230, 57, 70, 0.15);
@@ -28,6 +28,22 @@
             color: var(--light);
             line-height: 1.6;
             overflow-x: hidden;
+            background-image: url("fyu12.jpg");
+            /* OPTION 1: Use your image if it exists */
+            /* background-image: url("assets/fyu12.jpg"); */
+            
+            /* OPTION 2: Use gradient background (current default) */
+            
+            /* OPTION 3: Use pattern background */
+            /* background-image: 
+                radial-gradient(circle at 20% 50%, rgba(7, 91, 101, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(29, 53, 87, 0.2) 0%, transparent 50%),
+                linear-gradient(135deg, #110649 0%, #1a0a5c 100%); */
+            
+            background-size:cover;
+
+            background-position: center;
+            background-attachment: fixed;
         }
 
         /* Background Effect */
@@ -171,7 +187,7 @@
             font-size: 1.1rem;
             color: rgba(254, 254, 254, 0.7);
             margin-bottom: 3rem;
-            line-height: 1;
+            line-height: 1.6;
         }
 
         .info-card {
@@ -179,7 +195,7 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(230, 57, 70, 0.1);
             border-radius: 16px;
-            padding: 10px;
+            padding: 20px;
             margin-bottom: 1.5rem;
             transition: all 0.4s ease;
         }
@@ -220,7 +236,7 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(230, 57, 70, 0.15);
             border-radius: 24px;
-            padding: 10px;
+            padding: 40px;
             box-shadow: var(--shadow);
             animation: slideIn 1s ease-out 0.3s both;
         }
@@ -247,52 +263,39 @@
 
         .form-group {
             margin-bottom: 2rem;
-            animation: fadeInUp 0.6s ease-out both;
-        }
-
-        .form-group:nth-child(1) { animation-delay: 0.4s; }
-        .form-group:nth-child(2) { animation-delay: 0.5s; }
-        .form-group:nth-child(3) { animation-delay: 0.6s; }
-        .form-group:nth-child(4) { animation-delay: 0.7s; }
-        .form-group:nth-child(5) { animation-delay: 0.8s; }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         label {
             display: block;
             font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: var(--primary);
             margin-bottom: 0.75rem;
-            font-weight: 700;
+            color: rgba(254, 254, 254, 0.9);
         }
 
-        input,
-        textarea,
-        select {
+        input, select, textarea {
             width: 100%;
-            padding: 1rem 1.25rem;
-            background: rgba(10, 14, 39, 0.6);
+            padding: 1rem 1.5rem;
+            background: rgba(29, 53, 87, 0.4);
             border: 2px solid rgba(230, 57, 70, 0.2);
             border-radius: 12px;
             color: var(--light);
             font-size: 1rem;
             font-family: 'DM Sans', sans-serif;
             transition: all 0.3s ease;
-            outline: none;
         }
 
-        input:focus,
-        textarea:focus,
-        select:focus {
+        input:focus, select:focus, textarea:focus {
+            outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.1);
-            transform: translateY(-2px);
+            background: rgba(29, 53, 87, 0.6);
+            box-shadow: 0 0 0 4px rgba(7, 91, 101, 0.1);
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: rgba(254, 254, 254, 0.4);
         }
 
         textarea {
@@ -302,18 +305,12 @@
 
         select {
             cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23E63946' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 20px;
-            padding-right: 3rem;
         }
 
         .checkbox-group {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
             margin-top: 1.5rem;
         }
 
@@ -378,6 +375,11 @@
             transform: translateY(-1px);
         }
 
+        button[type="submit"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .container {
@@ -409,7 +411,7 @@
             }
         }
 
-        /* Success Animation */
+        /* Success/Error Animation */
         @keyframes success {
             0% { transform: scale(0.8); opacity: 0; }
             50% { transform: scale(1.05); }
@@ -464,12 +466,12 @@
 
             <div class="info-card">
                 <h3>Email</h3>
-                <p><a href="mailto:contact@tunisietelecom.tn">contact@gmail.com</a></p>
+                <p><a href="mailto:contact@businessapp.com">contact@businessapp.com</a></p>
             </div>
 
             <div class="info-card">
                 <h3>Adresse</h3>
-                <p>Avenue xxxxxxxx<br>1002 Tunis, Tunisie</p>
+                <p>Avenue Habib Bourguiba<br>1002 Tunis, Tunisie</p>
             </div>
 
             <div class="info-card">
@@ -488,7 +490,7 @@
             <form id="contactForm">
                 <div class="form-group">
                     <label for="name">Nom complet *</label>
-                    <input type="text" id="name" name="name" required placeholder="prénom et nom">
+                    <input type="text" id="name" name="name" required placeholder="Prénom et nom">
                 </div>
 
                 <div class="form-group">
@@ -521,7 +523,7 @@
 
                 <div class="checkbox-group">
                     <input type="checkbox" id="newsletter" name="newsletter">
-                    <label for="newsletter">J'accepte de recevoir des communications marketing de Tunisie Telecom</label>
+                    <label for="newsletter">J'accepte de recevoir des communications marketing de BusinessApp</label>
                 </div>
 
                 <button type="submit">Envoyer le message</button>
@@ -533,51 +535,7 @@
         </div>
     </div>
 
-    <script>
-        // Form Handling
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Simulate form submission
-            const button = this.querySelector('button[type="submit"]');
-            const originalText = button.textContent;
-            button.textContent = 'Envoi en cours...';
-            button.disabled = true;
-
-            setTimeout(() => {
-                // Show success message
-                document.getElementById('successMessage').classList.add('show');
-                button.textContent = originalText;
-                button.disabled = false;
-                
-                // Reset form
-                this.reset();
-
-                // Hide success message after 5 seconds
-                setTimeout(() => {
-                    document.getElementById('successMessage').classList.remove('show');
-                }, 5000);
-            }, 1500);
-        });
-
-        // Add smooth animations on scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -100px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.info-card, .form-group').forEach(el => {
-            observer.observe(el);
-        });
-    </script>
+    <!-- Contact Form JavaScript -->
+    <script src="js/contact.js"></script>
 </body>
 </html>

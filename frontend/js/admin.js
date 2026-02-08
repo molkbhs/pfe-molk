@@ -15,6 +15,18 @@ document.addEventListener("DOMContentLoaded", () => {
   loadChartData();
   loadUsers();
   document.getElementById("searchUsers").addEventListener("input", debounce(onSearch, 300));
+
+  // Déconnexion admin
+  const adminLogout = document.getElementById("adminLogout");
+  if (adminLogout) {
+    adminLogout.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.clear();
+      sessionStorage.clear();
+      const url = (window.location.origin && window.location.origin !== "null") ? window.location.origin + "/index.html" : "index.html";
+      window.location.replace(url);
+    });
+  }
 });
 
 function updateDateTime() {

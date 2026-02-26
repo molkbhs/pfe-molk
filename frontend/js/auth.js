@@ -41,7 +41,7 @@ function login() {
             
             // Redirect to dashboard
             setTimeout(() => {
-                window.location.href = "dashboard.html";
+                window.location.href = body.user.role === 'admin' ? 'admin.html' : 'dash.html';
             }, 1500);
         } else {
             msgEl.className = "message text-danger";
@@ -87,7 +87,7 @@ function checkAuth() {
             const userData = JSON.parse(user);
             if (userData.id && userData.email) {
                 // User is authenticated, redirect to dashboard
-                window.location.href = "dashboard.html";
+                window.location.href = userData.role === 'admin' ? 'admin.html' : 'dash.html';
             }
         } catch (e) {
             // Invalid user data, clear it
@@ -107,6 +107,17 @@ function logout() {
     window.location.replace(url);
 }
 
+/**
+ * Toggle password visibility on login form
+ */
+function toggleLoginPassword() {
+    const input = document.getElementById("password");
+    if (!input) return;
+    input.type = input.type === "password" ? "text" : "password";
+}
+
 // Auto-check authentication status when page loads
 // Uncomment if you want to auto-redirect authenticated users
 // window.addEventListener('DOMContentLoaded', checkAuth);
+
+

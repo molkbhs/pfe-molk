@@ -12,28 +12,91 @@
     <div class="card">
       <h2 class="card-title">Connexion</h2>
 
-      <form id="loginForm" onsubmit="event.preventDefault(); login();">
+      <form id="loginForm" onsubmit="event.preventDefault(); doLogin();">
         <div class="form-group">
           <label for="email" class="form-label">Email</label>
           <input id="email" type="email" class="form-control" placeholder="Votre email" aria-label="Email">
         </div>
         <div class="form-group">
           <label for="password" class="form-label">Mot de passe</label>
-          <input id="password" type="password" class="form-control" placeholder="Mot de passe" aria-label="Mot de passe">
+          <div class="input-group">
+            <input id="password" type="password" class="form-control" placeholder="Mot de passe" aria-label="Mot de passe">
+            <button class="btn btn-outline-secondary" type="button" onclick="togglePwd()">👁</button>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary" id="loginBtn">Se connecter</button>
-        <p id="msg" class="message"></p>
+        <button type="submit" class="btn btn-primary w-100" id="loginBtn">Se connecter</button>
+        <p id="msg" class="message mt-2"></p>
       </form>
 
-      <div class="divider">
+      <div class="divider mt-3">
         Pas encore inscrit ? <a href="register.html">Créer un compte</a>
       </div>
 
-      <div class="social-login">
-        <button onclick="loginGoogle()" class="btn btn-google w-100">Se connecter avec Google</button>
+      <div class="social-login mt-2">
+        <button onclick="window.location.href='/api/auth/google'" class="btn btn-google w-100">
+          Se connecter avec Google
+        </button>
       </div>
     </div>
   </div>
-  <script src="js/auth.js"></script>
+
+  <script>
+    async function doLogin() {
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const msg      = document.getElementById('msg');
+      const btn      = document.getElementById('loginBtn');
+
+      if (!email || !password) {
+        msg.style.color = '#ef4444';
+        msg.textContent = '⚠️ Email et mot de passe requis';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Connexion en cours...';
+      msg.textContent = '';
+
+      try {
+        const res  = await fetch('/api/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email, password})
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          msg.style.color = '#ef4444';
+          msg.textContent = '❌ ' + data.error;
+          btn.disabled = false;
+          btn.textContent = 'Se connecter';
+          return;
+        }
+
+        // Sauvegarder l'utilisateur (avec son rôle)
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // ── Redirection selon le rôle ──────────────────────────
+        // Admin → panneau d'administration
+        // User  → dashboard data
+        if (data.user.role === 'admin') {
+          window.location.href = 'admin.html';
+        } else {
+          window.location.href = 'dash.html';
+        }
+
+      } catch (err) {
+        msg.style.color = '#ef4444';
+        msg.textContent = '❌ Erreur réseau';
+        btn.disabled = false;
+        btn.textContent = 'Se connecter';
+      }
+    }
+
+    function togglePwd() {
+      const i = document.getElementById('password');
+      i.type = i.type === 'password' ? 'text' : 'password';
+    }
+  </script>
 </body>
 </html>

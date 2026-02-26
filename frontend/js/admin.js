@@ -301,3 +301,93 @@ function deleteInactive() {
 function sendNotification() {
   alert("Fonctionnalité à implémenter : envoi d'email de notification.");
 }
+// ── Add User Modal ─────────────────────────────────────────
+function openAddUserModal() {
+  document.getElementById('newFirstname').value = '';
+  document.getElementById('newLastname').value  = '';
+  document.getElementById('newEmail').value     = '';
+  document.getElementById('newPassword').value  = '';
+  document.getElementById('newRole').value      = 'user';
+  document.getElementById('addUserError').style.display = 'none';
+  document.getElementById('addUserModal').classList.add('open');
+}
+
+function closeAddUserModal() {
+  document.getElementById('addUserModal').classList.remove('open');
+}
+
+// Fermer en cliquant sur l'overlay
+document.getElementById('addUserModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddUserModal();
+});
+
+async function submitAddUser() {
+  const firstname = document.getElementById('newFirstname').value.trim();
+  const lastname  = document.getElementById('newLastname').value.trim();
+  const email     = document.getElementById('newEmail').value.trim();
+  const password  = document.getElementById('newPassword').value;
+  const role      = document.getElementById('newRole').value;
+  const errEl     = document.getElementById('addUserError');
+  const btn       = document.getElementById('btnConfirmAdd');
+
+  // Validation simple
+  errEl.style.display = 'none';
+  if (!firstname || !lastname || !email || !password) {
+    errEl.textContent = '⚠️ Tous les champs sont obligatoires.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (password.length < 6) {
+    errEl.textContent = '⚠️ Le mot de passe doit contenir au moins 6 caractères.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Création...';
+
+  try {
+    const r = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstname, lastname, email, password, role })
+    });
+    const d = await r.json();
+
+    if (d.error) {
+      errEl.textContent = '❌ ' + d.error;
+      errEl.style.display = 'block';
+      return;
+    }
+
+    toast(`✅ Compte de ${firstname} ${lastname} créé avec succès !`);
+    closeAddUserModal();
+    loadUsers();
+    loadStats();
+
+  } catch(e) {
+    errEl.textContent = '❌ Erreur réseau.';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✅ Créer le compte';
+  }
+}
+function addUserToTable(user) {
+  const tableBody = document.querySelector("#usersTable tbody");
+
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${user.id}</td>
+    <td>${user.firstname} ${user.lastname}</td>
+    <td>${user.email}</td>
+    <td>
+      <span class="badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}">
+        ${user.role}
+      </span>
+    </td>
+  `;
+
+  // Ajouter en haut du tableau
+  tableBody.prepend(tr);
+}

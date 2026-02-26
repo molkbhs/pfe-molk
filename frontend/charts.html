@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics Dashboard — BusinessApp</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="charts.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ══════════════════════ NAVBAR ══════════════════════ -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="dash.html">BusinessApp</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nb">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nb">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="dash.html">Data</a></li>
+        <li class="nav-item"><a class="nav-link active" href="charts.html">📈 Analytics</a></li>
+        <li class="nav-item"><a class="nav-link" href="profile.html">Profil</a></li>
+        <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+        <li class="nav-item" id="navAdminItem" style="display:none">
+          <a class="nav-link" href="admin.html">🛡 Admin</a>
+        </li>
+      </ul>
+      <div class="dropdown">
+        <a class="btn btn-light dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" id="navUser"></a>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="profile.html">Voir le profil</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><button class="dropdown-item text-danger" id="logoutNav">Déconnexion</button></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════ PAGE ══════════════════════ -->
+<div class="page-wrap">
+
+  <!-- Header -->
+  <div class="page-header anim">
+    <div>
+      <div class="hdr-eye">Analytics Dashboard</div>
+      <h1 class="hdr-title">Vos données,<br><em>visualisées</em></h1>
+      <p class="hdr-sub">KPIs interactifs · Graphiques dynamiques · Données nettoyées explorables</p>
+    </div>
+    <div class="hdr-actions">
+      <a href="dash.html" class="btn-ghost">⬅ Data</a>
+      <button class="btn-acc" id="btnRefresh">↻ Actualiser</button>
+    </div>
+  </div>
+
+  <!-- ════ EMPTY STATE ════ -->
+  <div id="emptyState" class="empty-state" style="display:none">
+    <div class="empty-orbit">
+      <div class="empty-core">📊</div>
+      <div class="empty-ring"></div>
+    </div>
+    <h2>Aucune donnée chargée</h2>
+    <p>Importez un fichier CSV ou Excel via la page <strong>Data</strong>, lancez l'ETL, puis revenez ici.</p>
+    <a href="dash.html" class="btn-cta">📁 Aller à la page Data</a>
+  </div>
+
+  <!-- ════ DASHBOARD ════ -->
+  <div id="dashContent" style="display:none">
+
+    <!-- File strip -->
+    <div class="file-strip anim d1">
+      <div class="file-strip-icon">📄</div>
+      <div>
+        <div class="file-strip-name" id="fbName">—</div>
+        <div class="file-strip-meta" id="fbRows">—</div>
+      </div>
+      <div class="strip-pills">
+        <span class="pill p-t" id="fbCols">—</span>
+        <span class="pill p-v" id="fbNum">—</span>
+        <span class="pill p-a" id="fbCat">—</span>
+      </div>
+    </div>
+
+    <!-- ════ STAT SWITCHER ════ -->
+    <!-- 
+  PATCH charts.html — ajouter ce bloc APRÈS le div#statSwitcher
+  (dans la section .stat-switcher-wrap)
+  
+  Remplacer cette section dans charts.html :
+  
+  AVANT :
+  ═══════
+    <div class="stat-switcher-wrap anim d1">
+      <span class="stat-switcher-lbl">Statistique active</span>
+      <div id="statSwitcher" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    </div>
+
+  APRÈS :
+  ═══════
+-->
+
+<div class="stat-switcher-wrap anim d1" style="display:flex;align-items:center;flex-wrap:wrap;gap:16px;justify-content:space-between;">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <span class="stat-switcher-lbl">Statistique active</span>
+    <div id="statSwitcher" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
+
+  <!-- ✅ BOUTON SAVE KPIs -->
+  <button id="btnSaveKpis" style="
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #00e5cc, #7c6ff7);
+    color: white;
+    font-weight: 700;
+    font-size: 0.88rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.03em;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(0,229,204,0.25);
+    white-space: nowrap;
+  "
+  onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 22px rgba(0,229,204,0.4)'"
+  onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(0,229,204,0.25)'">
+    💾 Sauvegarder KPIs
+  </button>
+</div>
+
+    <!-- ════ KPI ROW ════ -->
+    <div class="kpi-row" id="kpiRow"></div>
+
+    <!-- ════ FOCUS CHART ════ -->
+    <div class="focus-panel anim d2">
+      <div class="focus-hdr">
+        <div class="focus-title-wrap">
+          <div class="focus-eye">Focus · Graphique interactif</div>
+          <div class="focus-title" id="focusTitle">Sélectionnez un KPI numérique</div>
+          <div class="focus-sub" id="focusSub">Cliquez sur une carte KPI pour activer ce graphique</div>
+        </div>
+        <div class="focus-controls">
+          <span class="focus-sel-lbl">Catégorie</span>
+          <select class="axis-sel" id="focusCatSel" style="min-width:130px"></select>
+        </div>
+      </div>
+      <div id="cFocusWrap" class="canvas-wrap" style="height:280px">
+        <canvas id="cFocus"></canvas>
+      </div>
+    </div>
+
+    <!-- ════ DIVIDER ════ -->
+    <div class="divider anim d3"><span>Visualisations</span></div>
+
+    <!-- ════ GRID ════ -->
+    <div class="dash-grid">
+
+      <!-- Line -->
+      <div class="chart-card g-8 anim d3">
+        <div class="card-hdr">
+          <div><div class="card-eye">Tendance</div><div class="card-title" id="lineTitle">Évolution</div></div>
+          <span class="card-badge">LINE</span>
+        </div>
+        <div id="cLineWrap" class="canvas-wrap" style="height:240px"><canvas id="cLine"></canvas></div>
+      </div>
+
+      <!-- Doughnut -->
+      <div class="chart-card g-4 anim d4">
+        <div class="card-hdr">
+          <div><div class="card-eye">Répartition</div><div class="card-title" id="donutTitle">Distribution</div></div>
+          <span class="card-badge">DONUT</span>
+        </div>
+        <div class="axis-row">
+          <div class="axis-group">
+            <label class="axis-lbl">Colonne</label>
+            <select class="axis-sel" id="donutCol"></select>
+          </div>
+        </div>
+        <div id="cDonutWrap" class="canvas-wrap" style="height:190px"><canvas id="cDonut"></canvas></div>
+      </div>
+
+      <!-- Bar -->
+      <div class="chart-card g-6 anim d4">
+        <div class="card-hdr">
+          <div><div class="card-eye">Comparaison</div><div class="card-title" id="barTitle">Par catégorie</div></div>
+          <span class="card-badge">BAR</span>
+        </div>
+        <div class="axis-row">
+          <div class="axis-group"><label class="axis-lbl">Catégorie (X)</label><select class="axis-sel" id="barX"></select></div>
+          <div class="axis-group"><label class="axis-lbl">Valeur (Y)</label><select class="axis-sel" id="barY"></select></div>
+        </div>
+        <div id="cBarWrap" class="canvas-wrap" style="height:200px"><canvas id="cBar"></canvas></div>
+      </div>
+
+      <!-- H-Bar -->
+      <div class="chart-card g-6 anim d5">
+        <div class="card-hdr">
+          <div><div class="card-eye">Classement</div><div class="card-title" id="hbarTitle">Top N</div></div>
+          <span class="card-badge">RANKING</span>
+        </div>
+        <div id="cHBarWrap" class="canvas-wrap" style="height:250px"><canvas id="cHBar"></canvas></div>
+      </div>
+
+      <!-- Scatter -->
+      <div class="chart-card g-7 anim d5">
+        <div class="card-hdr">
+          <div><div class="card-eye">Corrélation</div><div class="card-title" id="scatterTitle">Nuage de points</div></div>
+          <span class="card-badge">SCATTER</span>
+        </div>
+        <div class="axis-row">
+          <div class="axis-group"><label class="axis-lbl">Axe X</label><select class="axis-sel" id="scX"></select></div>
+          <div class="axis-group"><label class="axis-lbl">Axe Y</label><select class="axis-sel" id="scY"></select></div>
+        </div>
+        <div id="cScatterWrap" class="canvas-wrap" style="height:210px"><canvas id="cScatter"></canvas></div>
+      </div>
+
+      <!-- Radar -->
+      <div class="chart-card g-5 anim d6">
+        <div class="card-hdr">
+          <div><div class="card-eye">Profil</div><div class="card-title">Moyennes normalisées</div></div>
+          <span class="card-badge">RADAR</span>
+        </div>
+        <div id="cRadarWrap" class="canvas-wrap" style="height:250px"><canvas id="cRadar"></canvas></div>
+      </div>
+
+    </div><!-- /.dash-grid -->
+
+    <!-- ════ DONNÉES NETTOYÉES — bouton cliquable ════ -->
+    <div class="divider anim d7"><span>Données nettoyées</span></div>
+
+    <button class="data-section-btn anim d7" id="btnOpenData">
+      <div class="dsb-accent"></div>
+      <div class="dsb-body">
+        <div class="dsb-eyebrow">Explorer · Trier · Exporter</div>
+        <div class="dsb-title">📋 Données nettoyées</div>
+        <div class="dsb-count" id="dataCount">Chargement…</div>
+      </div>
+      <div class="dsb-arrow">→</div>
+    </button>
+
+    <!-- ════ COLONNES ════ -->
+    <div class="divider anim d8"><span>Colonnes détectées</span></div>
+
+    <div class="chart-card anim d8" style="margin-bottom:0;padding:20px 24px">
+      <div style="font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tx-3);margin-bottom:12px">
+        🔢 Numérique &nbsp;·&nbsp; 📅 Date &nbsp;·&nbsp; 🏷 Catégorie &nbsp;·&nbsp; 📝 Texte libre
+      </div>
+      <div class="chips-wrap" id="chipsWrap"></div>
+    </div>
+
+  </div><!-- /#dashContent -->
+</div><!-- /.page-wrap -->
+
+<!-- ════ MODAL — Données nettoyées ════ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+
+    <!-- Header modal -->
+    <div class="modal-hdr">
+      <div class="modal-title-wrap">
+        <div class="modal-eye">Données nettoyées · Explorer</div>
+        <div class="modal-title">📋 Table de données</div>
+        <div class="modal-counter" id="modalCounter">—</div>
+      </div>
+      <div class="modal-toolbar">
+        <div class="modal-search-wrap">
+          <span class="modal-search-ico">🔍</span>
+          <input type="text" class="modal-search" id="modalSearch" placeholder="Rechercher…">
+        </div>
+        <button class="btn-export" id="btnExportCsv">📥 Export CSV</button>
+        <button class="btn-modal-close" id="btnCloseModal" title="Fermer (Esc)">✕</button>
+      </div>
+    </div>
+
+    <!-- Body modal -->
+    <div class="modal-body" id="modalTableWrap"></div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-msg" id="toastMsg">
+  <div class="toast-dot"></div>
+  <span id="toastText"></span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="charts.js"></script>
+</body>
+</html>

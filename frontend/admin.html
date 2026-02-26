@@ -3,184 +3,763 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Auth App</title>
+  <title>Administration — BusinessApp</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="/css/admin.css" rel="stylesheet">
+  <style>
+    body {
+      background-image: url("assets/fyu12.jpg");
+      background-size: cover;
+      background-position: center;
+      min-height: 100vh;
+    }
+    .navbar-brand { font-weight: bold; font-size: 1.5rem; color: darkblue; font-family: 'Segoe UI', sans-serif; }
+
+    :root {
+      --primary: #1fb5b5;
+      --secondary: #0f3950;
+      --admin: #ef4444;
+      --admin-dark: #b91c1c;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --border: #e2e8f0;
+      --radius: 12px;
+      --shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    .admin-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      color: white; padding: 4px 14px; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; margin-left: 8px;
+    }
+
+    .page-container { max-width: 1300px; margin: 0 auto; padding: 100px 24px 40px; }
+
+    .page-title {
+      font-size: 1.8rem; font-weight: 800;
+      background: linear-gradient(135deg, #ef4444, #0f3950);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 4px;
+    }
+    .page-subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 32px; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card {
+      background: white; border-radius: var(--radius); padding: 24px;
+      box-shadow: var(--shadow); border-left: 4px solid var(--primary);
+      transition: transform 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-card.red   { border-left-color: #ef4444; }
+    .stat-card.green { border-left-color: #10b981; }
+    .stat-card.amber { border-left-color: #f59e0b; }
+    .stat-card.blue  { border-left-color: #3b82f6; }
+    .stat-label { font-size: 0.78rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+    .stat-value { font-size: 2.2rem; font-weight: 800; color: #1e293b; line-height: 1; }
+
+    .section-card {
+      background: white; border-radius: var(--radius);
+      box-shadow: var(--shadow); margin-bottom: 28px; overflow: hidden;
+    }
+    .section-header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      background: linear-gradient(135deg, #0f3950, #1a5276);
+      color: white;
+    }
+    .section-header h5 { margin: 0; font-weight: 700; font-size: 1rem; }
+    .section-body { padding: 24px; }
+
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .admin-table th {
+      padding: 12px 16px; text-align: left; font-size: 0.72rem;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+      color: #64748b; border-bottom: 2px solid var(--border); background: #f8fafc;
+    }
+    .admin-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .admin-table tr:hover td { background: #f8fafc; }
+    .admin-table tr:last-child td { border-bottom: none; }
+
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem; color: white; flex-shrink: 0;
+    }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-name  { font-weight: 600; color: #1e293b; }
+    .user-email { font-size: 0.78rem; color: #64748b; }
+
+    .role-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 12px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .role-admin { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+    .role-user  { background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); }
+
+    .login-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 600;
+    }
+    .login-google { background: rgba(234,67,53,0.08); color: #ea4335; border: 1px solid rgba(234,67,53,0.2); }
+    .login-email  { background: rgba(66,133,244,0.08); color: #4285f4; border: 1px solid rgba(66,133,244,0.2); }
+
+    .action-btn {
+      padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+      border: none; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .btn-promote { background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+    .btn-promote:hover { background: #10b981; color: white; }
+    .btn-demote  { background: rgba(245,158,11,0.1); color: #d97706; border: 1px solid rgba(245,158,11,0.3); }
+    .btn-demote:hover  { background: #f59e0b; color: white; }
+    .btn-delete  { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+    .btn-delete:hover  { background: #ef4444; color: white; }
+
+    .search-input {
+      padding: 9px 16px; border: 2px solid var(--border); border-radius: 8px;
+      font-size: 0.9rem; width: 260px; transition: border 0.2s;
+    }
+    .search-input:focus { outline: none; border-color: var(--primary); }
+
+    .btn-export {
+      padding: 9px 20px; background: linear-gradient(135deg, #10b981, #059669);
+      color: white; border: none; border-radius: 8px; font-weight: 700;
+      font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-export:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+    @media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
+    .chart-box { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+    .chart-title { font-weight: 700; font-size: 0.9rem; color: #0f3950; margin-bottom: 20px; }
+    .chart-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .chart-bar-label { width: 100px; font-size: 0.78rem; color: #64748b; text-align: right; flex-shrink: 0; }
+    .chart-bar-track { flex: 1; height: 10px; background: #f1f5f9; border-radius: 6px; overflow: hidden; }
+    .chart-bar-fill  { height: 100%; border-radius: 6px; transition: width 1s ease; }
+    .chart-bar-val   { font-size: 0.78rem; font-weight: 700; color: #1e293b; width: 36px; flex-shrink: 0; }
+
+    .donut-wrap { display: flex; align-items: center; gap: 24px; }
+    .donut-legend { display: flex; flex-direction: column; gap: 10px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
+    .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    .toast-admin {
+      position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+      background: #1e293b; color: white; padding: 14px 22px;
+      border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      transform: translateX(300px); transition: transform 0.3s ease; pointer-events: none;
+    }
+    .toast-admin.show { transform: translateX(0); }
+    .toast-admin.success { border-left: 4px solid #10b981; }
+    .toast-admin.error   { border-left: 4px solid #ef4444; }
+
+    .access-denied {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 60vh; text-align: center; gap: 16px;
+    }
+    .access-denied h2 { color: #ef4444; font-weight: 800; }
+    .access-denied p  { color: #64748b; }
+
+    /* ══════════════════════════════════════════
+       MODAL — styles complets et corrigés
+    ══════════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+      border: 1px solid #e2e8f0;
+      animation: modalIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalIn {
+      from { transform: scale(0.88) translateY(16px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0f3950;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .modal-title-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1rem; color: white; flex-shrink: 0;
+    }
+
+    .modal-field {
+      margin-bottom: 16px;
+    }
+    .modal-field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .modal-field input,
+    .modal-field select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #1e293b;
+      background: #f8fafc;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .modal-field input:focus,
+    .modal-field select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      background: white;
+    }
+    .modal-field input::placeholder { color: #94a3b8; }
+
+    .modal-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .modal-error {
+      display: none;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #dc2626;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .btn-cancel {
+      flex: 1;
+      padding: 11px 0;
+      background: #f1f5f9;
+      color: #64748b;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: #e2e8f0; color: #334155; }
+
+    .btn-confirm {
+      flex: 2;
+      padding: 11px 0;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
+    .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .modal-divider {
+      height: 1px; background: #e2e8f0; margin: 20px 0;
+    }
+  </style>
 </head>
 <body>
-  <div class="dashboard">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <i class="bi bi-shield-lock"></i>
-        <span>Admin</span>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="dash.html">BusinessApp</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="dash.html">Data</a></li>
+        <li class="nav-item"><a class="nav-link" href="profile.html">Profil</a></li>
+        <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+        <li class="nav-item"><a class="nav-link active" href="admin.html">🛡 Admin</a></li>
+      </ul>
+      <div class="dropdown">
+        <a class="btn btn-light dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" id="navUser"></a>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="profile.html">Voir le profil</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><button class="dropdown-item text-danger" id="logoutNav">Déconnexion</button></li>
+        </ul>
       </div>
-      <nav class="sidebar-nav">
-        <a href="#" class="nav-item active" data-page="dashboard">
-          <i class="bi bi-grid-1x2"></i>
-          <span>Dashboard</span>
-        </a>
-        <a href="#" class="nav-item" data-page="users">
-          <i class="bi bi-people"></i>
-          <span>Utilisateurs</span>
-        </a>
-        <a href="#" class="nav-item" data-page="analytics">
-          <i class="bi bi-graph-up"></i>
-          <span>Analytics</span>
-        </a>
-        <a href="#" class="nav-item" data-page="settings">
-          <i class="bi bi-gear"></i>
-          <span>Paramètres</span>
-        </a>
-        <a href="index.html" class="nav-item nav-logout" id="adminLogout">
-          <i class="bi bi-box-arrow-left"></i>
-          <span>Déconnexion</span>
-        </a>
-      </nav>
-    </aside>
+    </div>
+  </div>
+</nav>
 
-    <!-- Main -->
-    <main class="main">
-      <!-- Top Navbar -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <h1 class="page-title">Dashboard</h1>
-        </div>
-        <div class="topbar-right">
-          <div class="topbar-date" id="currentDateTime"></div>
-          <div class="topbar-status">
-            <span class="status-dot"></span>
-            <span>Système actif</span>
-          </div>
-          <div class="topbar-profile">
-            <div class="avatar">A</div>
-            <span>Admin</span>
-          </div>
-        </div>
-      </header>
+<!-- CONTENU PRINCIPAL -->
+<div class="page-container" id="mainContent" style="display:none">
 
-      <div class="content">
-        <!-- Stats Cards -->
-        <section class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon teal"><i class="bi bi-people"></i></div>
-            <div class="stat-content">
-              <span class="stat-value" id="statTotal">0</span>
-              <span class="stat-label">Total utilisateurs</span>
-              <span class="stat-sub" id="statTotalSub">—</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon yellow"><i class="bi bi-person-plus"></i></div>
-            <div class="stat-content">
-              <span class="stat-value" id="statNewToday">0</span>
-              <span class="stat-label">Nouveaux aujourd'hui</span>
-              <span class="stat-sub" id="statNewSub">—</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon teal"><i class="bi bi-activity"></i></div>
-            <div class="stat-content">
-              <span class="stat-value" id="statActive">0</span>
-              <span class="stat-label">Actifs (7 jours)</span>
-              <span class="stat-sub" id="statActiveSub">—</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon yellow"><i class="bi bi-google"></i></div>
-            <div class="stat-content">
-              <span class="stat-value" id="statGoogle">0</span>
-              <span class="stat-label">Connexion Google</span>
-              <span class="stat-sub">—</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon teal"><i class="bi bi-envelope"></i></div>
-            <div class="stat-content">
-              <span class="stat-value" id="statEmail">0</span>
-              <span class="stat-label">Connexion Email</span>
-              <span class="stat-sub">—</span>
-            </div>
-          </div>
-        </section>
+  <div class="d-flex align-items-center gap-2 mb-1">
+    <div class="page-title">Panneau d'administration</div>
+    <span class="admin-badge">🛡 Admin</span>
+  </div>
+  <div class="page-subtitle">Gérez les utilisateurs, consultez les statistiques et exportez les données.</div>
 
-        <!-- Charts -->
-        <section class="charts-grid">
-          <div class="chart-card">
-            <h3>Inscriptions par jour (30 jours)</h3>
-            <div class="chart-wrap"><canvas id="chartRegistrations"></canvas></div>
-          </div>
-          <div class="chart-card">
-            <h3>Google vs Email</h3>
-            <div class="chart-wrap"><canvas id="chartLoginType"></canvas></div>
-          </div>
-          <div class="chart-card">
-            <h3>Activité par semaine</h3>
-            <div class="chart-wrap"><canvas id="chartActivity"></canvas></div>
-          </div>
-        </section>
-
-        <!-- Quick Actions -->
-        <section class="quick-actions">
-          <h3>Actions rapides</h3>
-          <div class="actions-grid">
-            <button class="action-btn" onclick="addUserModal()">
-              <i class="bi bi-person-plus"></i>
-              <span>Ajouter un utilisateur</span>
-            </button>
-            <a href="/api/users/export" class="action-btn" download target="_blank">
-              <i class="bi bi-download"></i>
-              <span>Exporter CSV</span>
-            </a>
-            <button class="action-btn" onclick="deleteInactive()">
-              <i class="bi bi-trash"></i>
-              <span>Supprimer inactifs</span>
-            </button>
-            <button class="action-btn" onclick="sendNotification()">
-              <i class="bi bi-envelope"></i>
-              <span>Envoyer notification</span>
-            </button>
-          </div>
-        </section>
-
-        <!-- Recent Users Table -->
-        <section class="table-section">
-          <div class="table-header">
-            <h3>Utilisateurs récents</h3>
-            <div class="table-toolbar">
-              <input type="text" id="searchUsers" class="form-control" placeholder="Rechercher utilisateur, email...">
-              <button class="btn btn-sm btn-outline-secondary" onclick="loadUsers()"><i class="bi bi-arrow-clockwise"></i></button>
-            </div>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Username</th>
-                  <th>Email</th>
-                  <th>Date inscription</th>
-                  <th>Type</th>
-                  <th>Statut</th>
-                  <th>Dernière connexion</th>
-                </tr>
-              </thead>
-              <tbody id="usersTableBody">
-                <tr><td colspan="7" class="text-center py-4">Chargement...</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="table-footer">
-            <span id="tableInfo">—</span>
-            <div class="pagination" id="pagination"></div>
-          </div>
-        </section>
-      </div>
-    </main>
+  <!-- STATS -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card blue"><div class="stat-label">👥 Total utilisateurs</div><div class="stat-value" id="statTotal">—</div></div>
+    <div class="stat-card green"><div class="stat-label">✅ Nouveaux aujourd'hui</div><div class="stat-value" id="statToday">—</div></div>
+    <div class="stat-card amber"><div class="stat-label">📅 Actifs cette semaine</div><div class="stat-value" id="statWeek">—</div></div>
+    <div class="stat-card red"><div class="stat-label">🔑 Comptes Google</div><div class="stat-value" id="statGoogle">—</div></div>
+    <div class="stat-card blue"><div class="stat-label">📧 Comptes Email</div><div class="stat-value" id="statEmail">—</div></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="/js/admin.js"></script>
+  <!-- CHARTS -->
+  <div class="charts-row">
+    <div class="chart-box">
+      <div class="chart-title">🔑 Méthode de connexion</div>
+      <div class="donut-wrap">
+        <svg width="120" height="120" viewBox="0 0 120 120" id="donutSvg">
+          <circle cx="60" cy="60" r="45" fill="none" stroke="#f1f5f9" stroke-width="22"/>
+          <circle cx="60" cy="60" r="45" fill="none" stroke="#3b82f6" stroke-width="22"
+            stroke-dasharray="283" stroke-dashoffset="0"
+            transform="rotate(-90 60 60)" id="donutEmail"/>
+          <circle cx="60" cy="60" r="45" fill="none" stroke="#ea4335" stroke-width="22"
+            stroke-dasharray="283" stroke-dashoffset="283"
+            transform="rotate(-90 60 60)" id="donutGoogle"/>
+        </svg>
+        <div class="donut-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div><span>Email : <strong id="lgEmail">0</strong></span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ea4335"></div><span>Google : <strong id="lgGoogle">0</strong></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">📊 Activité récente</div>
+      <div id="barChart">
+        <div class="chart-bar-row">
+          <div class="chart-bar-label">Aujourd'hui</div>
+          <div class="chart-bar-track"><div class="chart-bar-fill" id="barToday" style="width:0%;background:#10b981"></div></div>
+          <div class="chart-bar-val" id="barTodayVal">0</div>
+        </div>
+        <div class="chart-bar-row">
+          <div class="chart-bar-label">Cette semaine</div>
+          <div class="chart-bar-track"><div class="chart-bar-fill" id="barWeek" style="width:0%;background:#3b82f6"></div></div>
+          <div class="chart-bar-val" id="barWeekVal">0</div>
+        </div>
+        <div class="chart-bar-row">
+          <div class="chart-bar-label">Total</div>
+          <div class="chart-bar-track"><div class="chart-bar-fill" id="barTotal" style="width:0%;background:#8b5cf6"></div></div>
+          <div class="chart-bar-val" id="barTotalVal">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LISTE UTILISATEURS -->
+  <div class="section-card">
+    <div class="section-header">
+      <h5>👥 Utilisateurs (<span id="userCountLabel">0</span>)</h5>
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <input type="text" class="search-input" id="searchUsers" placeholder="🔍 Rechercher...">
+        <button class="btn-export" onclick="exportCSV()">📥 Exporter CSV</button>
+      </div>
+      <div>
+      <!-- CORRECTION : id unique, onclick direct, pas de JS externe qui appelle alert() -->
+      <button class="btn-export" id="btnAddUser" type="button"
+        style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)"
+        onclick="return openAddUserModal(event)">
+        ➕ Ajouter un utilisateur
+      </button>
+    </div>
+  </div>
+    <div class="section-body" style="padding:0; overflow-x:auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Utilisateur</th>
+            <th>Email</th>
+            <th>Rôle</th>
+            <th>Connexion</th>
+            <th>Inscrit le</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody">
+          <tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ACCESS DENIED -->
+<div class="page-container" id="accessDenied" style="display:none">
+  <div class="access-denied">
+    <div style="font-size:5rem">🚫</div>
+    <h2>Accès refusé</h2>
+    <p>Vous devez être administrateur pour accéder à cette page.</p>
+    <a href="dash.html" class="btn btn-primary mt-2">Retour au Dashboard</a>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-admin" id="adminToast"></div>
+
+<!-- ══════════════════════════════════════════
+     MODAL AJOUTER UTILISATEUR
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="addUserModal">
+  <div class="modal-box">
+    <div class="modal-title">
+      <div class="modal-title-icon">➕</div>
+      Ajouter un utilisateur
+    </div>
+
+    <div class="modal-row">
+      <div class="modal-field">
+        <label>Prénom</label>
+        <input type="text" id="newFirstname" placeholder="Jean" autocomplete="off">
+      </div>
+      <div class="modal-field">
+        <label>Nom</label>
+        <input type="text" id="newLastname" placeholder="Dupont" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="modal-field">
+      <label>Adresse email</label>
+      <input type="email" id="newEmail" placeholder="jean.dupont@email.com" autocomplete="off">
+    </div>
+
+    <div class="modal-field">
+      <label>Mot de passe</label>
+      <input type="password" id="newPassword" placeholder="Min. 6 caractères">
+    </div>
+
+    <div class="modal-field">
+      <label>Rôle</label>
+      <select id="newRole">
+        <option value="user">👤 Utilisateur</option>
+        <option value="admin">🛡 Administrateur</option>
+      </select>
+    </div>
+
+    <div class="modal-error" id="addUserError"></div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" type="button" onclick="closeAddUserModal()">Annuler</button>
+      <button class="btn-confirm" id="btnConfirmAdd" type="button" onclick="submitAddUser()">✅ Créer le compte</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Auth Guard ─────────────────────────────────────────────
+const user = JSON.parse(localStorage.getItem('user') || 'null');
+if (!user) {
+  window.location.href = 'index.html';
+} else {
+  document.getElementById('navUser').textContent = user.username || user.email;
+
+  if (user.role !== 'admin') {
+    document.getElementById('accessDenied').style.display = 'block';
+  } else {
+    document.getElementById('mainContent').style.display = 'block';
+    loadStats();
+    loadUsers();
+  }
+}
+
+document.getElementById('logoutNav')?.addEventListener('click', () => {
+  localStorage.clear(); sessionStorage.clear();
+  window.location.href = 'index.html';
+});
+
+// ── Toast ──────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const t = document.getElementById('adminToast');
+  t.textContent = msg;
+  t.className = `toast-admin show ${type}`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Stats ──────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const r = await fetch('/api/stats');
+    const d = await r.json();
+
+    document.getElementById('statTotal').textContent  = d.total_users ?? '-';
+    document.getElementById('statToday').textContent  = d.new_today   ?? '-';
+    document.getElementById('statWeek').textContent   = d.active_week ?? '-';
+    document.getElementById('statGoogle').textContent = d.google_users ?? '-';
+    document.getElementById('statEmail').textContent  = d.email_users  ?? '-';
+
+    const max = Math.max(d.total_users, 1);
+    document.getElementById('barToday').style.width   = Math.round((d.new_today   / max) * 100) + '%';
+    document.getElementById('barWeek').style.width    = Math.round((d.active_week / max) * 100) + '%';
+    document.getElementById('barTotal').style.width   = '100%';
+    document.getElementById('barTodayVal').textContent = d.new_today;
+    document.getElementById('barWeekVal').textContent  = d.active_week;
+    document.getElementById('barTotalVal').textContent = d.total_users;
+
+    document.getElementById('lgEmail').textContent  = d.email_users;
+    document.getElementById('lgGoogle').textContent = d.google_users;
+    const circ = 2 * Math.PI * 45;
+    const emailFrac  = d.total_users > 0 ? d.email_users  / d.total_users : 0;
+    const googleFrac = d.total_users > 0 ? d.google_users / d.total_users : 0;
+    document.getElementById('donutEmail').setAttribute('stroke-dasharray',
+      `${(emailFrac * circ).toFixed(1)} ${circ}`);
+    document.getElementById('donutGoogle').setAttribute('stroke-dasharray',
+      `${(googleFrac * circ).toFixed(1)} ${circ}`);
+    document.getElementById('donutGoogle').setAttribute('stroke-dashoffset',
+      `${((1 - googleFrac) * circ).toFixed(1)}`);
+  } catch(e) { toast('Erreur chargement stats', 'error'); }
+}
+
+// ── Users ──────────────────────────────────────────────────
+let allUsers = [];
+async function loadUsers() {
+  try {
+    const r = await fetch('/api/users');
+    allUsers = await r.json();
+    renderUsers(allUsers);
+  } catch(e) { toast('Erreur chargement utilisateurs', 'error'); }
+}
+
+const COLORS_AVA = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4','#ec4899'];
+function avatarColor(name) {
+  let h = 0;
+  for (let c of (name||'?')) h = (h * 31 + c.charCodeAt(0)) % COLORS_AVA.length;
+  return COLORS_AVA[h];
+}
+
+function renderUsers(list) {
+  const tbody = document.getElementById('usersTableBody');
+  document.getElementById('userCountLabel').textContent = list.length;
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8">Aucun utilisateur trouvé</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(u => {
+    const initials = ((u.firstname||'?')[0] + (u.lastname||'?')[0]).toUpperCase();
+    const color    = avatarColor(u.firstname + u.lastname);
+    const isAdmin  = u.role === 'admin';
+    const isSelf   = user.id == u.id;
+
+    const roleHtml = isAdmin
+      ? `<span class="role-badge role-admin">🛡 Admin</span>`
+      : `<span class="role-badge role-user">👤 User</span>`;
+
+    const loginHtml = u.login_type === 'google'
+      ? `<span class="login-badge login-google">🔑 Google</span>`
+      : `<span class="login-badge login-email">📧 Email</span>`;
+
+    const promoteBtn = !isAdmin
+      ? `<button class="action-btn btn-promote" onclick="changeRole(${u.id}, 'admin')">⬆ Promouvoir</button>`
+      : !isSelf
+      ? `<button class="action-btn btn-demote" onclick="changeRole(${u.id}, 'user')">⬇ Rétrograder</button>`
+      : '';
+
+    const deleteBtn = !isSelf
+      ? `<button class="action-btn btn-delete" onclick="deleteUser(${u.id}, '${u.firstname}')">🗑 Supprimer</button>`
+      : `<span style="font-size:0.72rem;color:#94a3b8">(vous)</span>`;
+
+    return `<tr>
+      <td>
+        <div class="user-info">
+          <div class="user-avatar" style="background:${color}">${initials}</div>
+          <div><div class="user-name">${u.firstname} ${u.lastname}</div></div>
+        </div>
+      </td>
+      <td class="user-email">${u.email}</td>
+      <td>${roleHtml}</td>
+      <td>${loginHtml}</td>
+      <td style="font-size:0.82rem;color:#64748b">${u.created_at || '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${promoteBtn}
+          ${deleteBtn}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('searchUsers').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  renderUsers(allUsers.filter(u =>
+    [u.firstname, u.lastname, u.email, u.role].some(v => (v||'').toLowerCase().includes(q))
+  ));
+});
+
+async function changeRole(userId, newRole) {
+  try {
+    const r = await fetch(`/api/admin/users/${userId}/role`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({role: newRole})
+    });
+    const d = await r.json();
+    if (d.error) { toast('❌ ' + d.error, 'error'); return; }
+    toast(`✅ Rôle mis à jour → ${newRole}`);
+    loadUsers();
+  } catch(e) { toast('❌ Erreur réseau', 'error'); }
+}
+
+async function deleteUser(userId, name) {
+  if (!confirm(`Supprimer le compte de ${name} ? Cette action est irréversible.`)) return;
+  try {
+    const r = await fetch(`/api/profile/${userId}`, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.error) { toast('❌ ' + d.error, 'error'); return; }
+    toast(`🗑 Compte de ${name} supprimé`);
+    loadUsers(); loadStats();
+  } catch(e) { toast('❌ Erreur réseau', 'error'); }
+}
+
+function exportCSV() {
+  window.location.href = '/api/users/export';
+  toast('Téléchargement en cours...');
+}
+
+// ── Modal Ajouter Utilisateur ──────────────────────────────
+function openAddUserModal(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') {
+      event.stopImmediatePropagation();
+    }
+  }
+  // Réinitialiser le formulaire
+  document.getElementById('newFirstname').value = '';
+  document.getElementById('newLastname').value  = '';
+  document.getElementById('newEmail').value     = '';
+  document.getElementById('newPassword').value  = '';
+  document.getElementById('newRole').value      = 'user';
+  const errEl = document.getElementById('addUserError');
+  errEl.textContent = '';
+  errEl.style.display = 'none';
+  const btn = document.getElementById('btnConfirmAdd');
+  btn.disabled = false;
+  btn.textContent = '✅ Créer le compte';
+
+  // Afficher le modal
+  document.getElementById('addUserModal').classList.add('open');
+  return false;
+}
+
+function closeAddUserModal() {
+  document.getElementById('addUserModal').classList.remove('open');
+}
+
+// Fermer en cliquant sur l'overlay (fond)
+document.getElementById('addUserModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddUserModal();
+});
+
+// Fermer avec Echap
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeAddUserModal();
+});
+
+async function submitAddUser() {
+  const firstname = document.getElementById('newFirstname').value.trim();
+  const lastname  = document.getElementById('newLastname').value.trim();
+  const email     = document.getElementById('newEmail').value.trim();
+  const password  = document.getElementById('newPassword').value;
+  const role      = document.getElementById('newRole').value;
+  const errEl     = document.getElementById('addUserError');
+  const btn       = document.getElementById('btnConfirmAdd');
+
+  errEl.style.display = 'none';
+  errEl.textContent   = '';
+
+  if (!firstname || !lastname || !email || !password) {
+    errEl.textContent = '⚠️ Tous les champs sont obligatoires.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (password.length < 6) {
+    errEl.textContent = '⚠️ Le mot de passe doit contenir au moins 6 caractères.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Création...';
+
+  try {
+    const r = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstname, lastname, email, password, role })
+    });
+    const d = await r.json();
+
+    if (!r.ok || d.error) {
+      errEl.textContent = '❌ ' + (d.error || 'Erreur lors de la création.');
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = '✅ Créer le compte';
+      return;
+    }
+
+    toast(`✅ Compte de ${firstname} ${lastname} créé avec succès !`);
+    closeAddUserModal();
+    await loadUsers();
+    await loadStats();
+  } catch(e) {
+    errEl.textContent = '❌ Erreur réseau.';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✅ Créer le compte';
+  }
+}
+</script>
 </body>
 </html>

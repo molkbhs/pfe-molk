@@ -73,3 +73,14 @@ function register() {
         registerBtn.innerText = "Créer un compte";
     });
 }
+
+/**
+ * Toggle visibility of password and confirmation fields on register form
+ */
+function toggleRegisterPasswords() {
+    ["password", "confirmpass"].forEach(id => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.type = input.type === "password" ? "text" : "password";
+    });
+}

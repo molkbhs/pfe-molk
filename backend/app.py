@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Flask Backend — app.py complet et corrigé
 KPI + Prévisions intégrés (sans jwt_required, utilise get_connection)
@@ -14,6 +14,8 @@ import time
 import json
 import warnings
 import importlib.util as _ilu
+import pandas as pd
+import numpy as np
 
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
@@ -129,11 +131,33 @@ def get_current_user():
 # =====================================================
 
 def create_kpi_tables():
-    """Crée valeur_kpi et previsions si elles n'existent pas."""
-    conn = None
+    """Crée les tables nécessaires dans pfe_bd si elles n'existent pas."""
+    import mysql.connector
+    from config import DB_CONFIG
+    
+    # 1. Se connecter sans base pour s'assurer que pfe_bd existe
+    conf_no_db = DB_CONFIG.copy()
+    db_name = conf_no_db.pop("database", "pfe_bd")
+    
     try:
-        conn   = get_connection()
+        conn = mysql.connector.connect(**conf_no_db)
         cursor = conn.cursor()
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+        cursor.execute(f"USE {db_name}")
+        
+        # ── USERS ─────────────────────────────────────
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id           INT AUTO_INCREMENT PRIMARY KEY,
+                firstname    VARCHAR(100),
+                lastname     VARCHAR(100),
+                email        VARCHAR(150) UNIQUE NOT NULL,
+                password     VARCHAR(255),
+                role         VARCHAR(50) DEFAULT 'user',
+                login_type   VARCHAR(50) DEFAULT 'email',
+                created_at   DATETIME    DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """)
 
         # ── VALEUR KPI ────────────────────────────────
         cursor.execute("""
@@ -171,6 +195,20 @@ def create_kpi_tables():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """)
 
+        # ── HISTORIQUE IMPORTS ────────────────────────
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS historique_imports (
+                id            INT AUTO_INCREMENT PRIMARY KEY,
+                nom_fichier   VARCHAR(255)   NOT NULL,
+                date_import   DATETIME       DEFAULT CURRENT_TIMESTAMP,
+                nb_lignes     INT            DEFAULT 0,
+                nb_colonnes   INT            DEFAULT 0,
+                statut        VARCHAR(50)    DEFAULT 'succès',
+                user_id       INT            DEFAULT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """)
+
         conn.commit()
         cursor.close()
         print("[app] ✅ Tables valeur_kpi et previsions OK")
@@ -180,6 +218,96 @@ def create_kpi_tables():
         if conn:
             conn.close()
 
+
+
+# =====================================================
+# CHATBOT — Intent Engine
+# =====================================================
+
+@app.route("/api/chatbot/ask", methods=["POST"])
+def chatbot_ask():
+    try:
+        data = request.get_json() or {}
+        msg  = (data.get("message") or "").strip().lower()
+        
+        if not msg:
+            return jsonify({"answer": "Posez-moi une question sur vos données !"})
+
+        # Mots clés simples pour détection d'intention
+        if any(w in msg for w in ["revenu", "argent", "gagné", "ca"]):
+            res = run_query("SELECT SUM(valeur) as total FROM valeur_kpi WHERE kpiNom LIKE '%revenu%'", fetch_one=True)
+            total = res['total'] if res and res['total'] else 0
+            return jsonify({"answer": f"Le revenu total détecté est de {total:,.2f} €."})
+            
+        if any(w in msg for w in ["dépense", "coût", "perdu"]):
+            res = run_query("SELECT SUM(valeur) as total FROM valeur_kpi WHERE kpiNom LIKE '%depense%'", fetch_one=True)
+            total = res['total'] if res and res['total'] else 0
+            return jsonify({"answer": f"Les dépenses s'élèvent à {total:,.2f} €."})
+
+        if any(w in msg for w in ["utilisateur", "client", "membre"]):
+            res = run_query("SELECT COUNT(*) as n FROM users", fetch_one=True)
+            return jsonify({"answer": f"Il y a actuellement {res['n']} utilisateurs enregistrés."})
+
+        return jsonify({"answer": "Je ne suis pas sûr de comprendre. Je peux vous aider sur les revenus, dépenses ou utilisateurs."})
+    except Exception as e:
+        return jsonify({"answer": f"Désolé, j'ai rencontré une erreur : {str(e)}"}), 500
+
+
+# =====================================================
+# HISTORIQUE DES IMPORTS
+# =====================================================
+
+@app.route("/api/etl/history", methods=["GET"])
+def get_etl_history():
+    try:
+        user_id = get_current_user()
+        if not user_id:
+            return jsonify({"error": "Auth requis"}), 401
+            
+        history = run_query(
+            "SELECT * FROM historique_imports WHERE user_id=%s ORDER BY date_import DESC",
+            (user_id,)
+        )
+        # Convert datetime objects to ISO strings for JSON
+        for h in history:
+            if h.get("date_import"):
+                h["date_import"] = h["date_import"].isoformat()
+        return jsonify(history)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/etl/history/<int:import_id>", methods=["DELETE"])
+def delete_etl_history(import_id):
+    try:
+        user_id = get_current_user()
+        run_update("DELETE FROM historique_imports WHERE id=%s AND user_id=%s", (import_id, user_id))
+        return jsonify({"success": True, "message": "Import supprimé de l'historique"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# =====================================================
+# PROFILE — Simplified GET
+# =====================================================
+
+@app.route("/api/profile", methods=["GET"])
+def get_my_profile():
+    user_id = get_current_user()
+    if not user_id:
+        return jsonify({"error": "Non autorisé"}), 401
+
+    user = run_query("SELECT id, firstname, email, role FROM users WHERE id=%s", (user_id,), fetch_one=True)
+    if not user:
+        return jsonify({"error": "User non trouvé"}), 404
+        
+    return jsonify({
+        "status": "success",
+        "data": {
+            "id": user['id'],
+            "username": user['firstname'],
+            "email": user['email'],
+            "role": user['role']
+        }
+    })
 
 # =====================================================
 # GOOGLE OAUTH ROUTES
@@ -640,44 +768,88 @@ def etl_ping():
 def etl_upload():
     if "file" not in request.files:
         return jsonify({"error": "Aucun fichier reçu"}), 400
-    file  = request.files["file"]
+    file = request.files["file"]
     fname = file.filename or ""
     if not any(fname.lower().endswith(e) for e in (".csv", ".xlsx", ".xls")):
         return jsonify({"error": "Format accepté : CSV, XLSX, XLS"}), 400
+    
     safe_fname = re.sub(r"[^\w._-]", "_", fname)
-    save_path  = UPLOAD_FOLDER / safe_fname
+    save_path = UPLOAD_FOLDER / safe_fname
     file.save(str(save_path))
+    
     try:
-        result = run_generic_etl(str(save_path))
+        # Simple preview without ETL engine processing
+        if safe_fname.lower().endswith('.csv'):
+            df = pd.read_csv(str(save_path), nrows=100)
+        else:
+            df = pd.read_excel(str(save_path), nrows=100)
+        
+        preview = []
+        for _, row in df.iterrows():
+            preview.append({str(k): (None if pd.isna(v) else v) for k, v in row.to_dict().items()})
+            
+        return jsonify({
+            "success": True,
+            "filename": safe_fname,
+            "preview": preview,
+            "stats": {
+                "columns": list(df.columns),
+                "rows_preview": len(df)
+            }
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Erreur lecture fichier: {str(e)}"}), 500
+
+@app.route("/api/etl/process", methods=["POST"])
+def etl_process():
+    try:
+        user_id = get_current_user()
+        if not user_id:
+            return jsonify({"error": "Authentification requise"}), 401
+            
+        data = request.get_json() or {}
+        filename = data.get("filename")
+        if not filename:
+            return jsonify({"error": "Nom de fichier manquant"}), 400
+            
+        file_path = UPLOAD_FOLDER / filename
+        if not file_path.exists():
+            return jsonify({"error": "Fichier non trouvé"}), 404
+            
+        # Run the full ETL pipeline
+        print(f"[ETL] Processing file: {filename} for user: {user_id}")
+        result = run_generic_etl(str(file_path))
+        
+        if not result.get("success"):
+            print(f"[ETL] Cleaning failed: {result.get('error')}")
+            return jsonify({"error": result.get("log", ["Erreur inconnue"])[-1]}), 500
+            
+        print(f"[ETL] Cleaning success: {result.get('stats')}")
+        # Log to History in pfe_bd
+        stats = result.get("stats", {})
+        run_update(
+            """INSERT INTO historique_imports (nom_fichier, nb_lignes, nb_colonnes, user_id)
+               VALUES (%s, %s, %s, %s)""",
+            (filename, stats.get("lignes", 0), stats.get("colonnes", 0), user_id)
+        )
+        print(f"[ETL] History logged.")
+        
+        return jsonify({
+            "success": True,
+            "log": result.get("log", []),
+            "stats": stats,
+            "db_result": result.get("db_result")
+        })
     except Exception as e:
         import traceback
-        return jsonify({"error": f"ETL échoué : {str(e)}", "detail": traceback.format_exc()}), 500
-    if not result.get("success"):
-        return jsonify({"error": result.get("log", ["Erreur inconnue"])[-1]}), 500
-    cleaned_src  = save_path.parent / "donnees_nettoyees.csv"
-    cleaned_dest = UPLOAD_FOLDER / "donnees_nettoyees.csv"
-    if cleaned_src.exists():
-        _safe_copy(cleaned_src, cleaned_dest)
-    return jsonify({
-        "success":       True,
-        "stats":         result["stats"],
-        "preview":       result["preview"],
-        "total_preview": result["total_preview"],
-        "schema":        result.get("schema", {}),
-        "db_result": {
-            "db_name":       result["db_result"]["db_name"],
-            "table_name":    result["db_result"]["table_name"],
-            "rows_inserted": result["db_result"]["rows_inserted"],
-            "marts_detail":  result["db_result"].get("marts_detail", {}),
-        }
-    })
+        return jsonify({"error": str(e), "detail": traceback.format_exc()}), 500
 
 
 @app.route("/api/etl/schema", methods=["GET"])
 def etl_schema():
     try:
         from sqlalchemy import create_engine, inspect as sa_inspect
-        engine = create_engine("mysql+pymysql://root:@127.0.0.1:3306/etl_data", echo=False)
+        engine = create_engine("mysql+pymysql://root:@127.0.0.1:3306/pfe_bd", echo=False)
         insp   = sa_inspect(engine)
         tables = insp.get_table_names()
         result = {t: [{"name": c["name"], "type": str(c["type"])} for c in insp.get_columns(t)] for t in tables}

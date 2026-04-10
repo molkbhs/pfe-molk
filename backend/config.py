@@ -2,5 +2,5 @@ DB_CONFIG = {
     "host": "localhost",
     "user": "root",
     "password": "",
-    "database": "login"
+    "database": "pfe_bd"
 }

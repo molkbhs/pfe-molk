@@ -62,17 +62,21 @@
         .users-table th {
             font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
             color: var(--text-muted); padding: 12px 20px;
-            background: var(--bg-soft, #f8f8fc);
+            background: var(--bg-soft);
             border-bottom: 1px solid var(--border-subtle);
             white-space: nowrap;
         }
         .users-table td {
-            padding: 13px 20px; border-bottom: 1px solid var(--border-color, rgba(0,0,0,.06));
+            padding: 13px 20px; border-bottom: 1px solid var(--border-subtle);
             font-size: 0.87rem; vertical-align: middle;
         }
         .users-table tbody tr:last-child td { border-bottom: none; }
         .users-table tbody tr { transition: background .12s; }
         .users-table tbody tr:hover td { background: var(--bg-soft); }
+        .users-table tbody tr td { user-select: none; -webkit-user-select: none; cursor: default; }
+        .users-table tbody tr td select,
+        .users-table tbody tr td button { cursor: pointer; }
+        .users-table tbody tr td.email-cell { user-select: text; -webkit-user-select: text; }
 
         /* ── User cell ── */
         .user-cell { display: flex; align-items: center; gap: 12px; }
@@ -111,7 +115,7 @@
             background: transparent;
         }
         .btn-icon.del:hover { background: #fee2e2; }
-        .btn-icon.edit-btn:hover { background: var(--bg-soft, #f0f0fa); }
+        .btn-icon.edit-btn:hover { background: var(--bg-soft); }
 
         /* ── Empty state ── */
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
@@ -534,7 +538,7 @@ function renderPage() {
                     </div>
                 </div>
             </td>
-            <td style="color:var(--text-muted);font-size:.83rem">${esc(u.email)}</td>
+            <td class="email-cell" style="color:var(--text-muted);font-size:.83rem">${esc(u.email)}</td>
             <td>
                 <select class="role-select ${u.role}" id="role-${u.id}"
                     onchange="changeRole(${u.id}, this)"

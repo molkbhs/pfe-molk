@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Flask Backend — app.py
 - ETL stable sans 500 après succès
@@ -1119,6 +1119,165 @@ def export_users():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=users.csv"},
     )
+
+
+# -------------------------------------------------------------------
+# ANALYTICS — star-schema queries for charts.html
+# -------------------------------------------------------------------
+@app.route("/api/analytics/data", methods=["GET"])
+def analytics_data():
+    """Return all transactions joined with dimension tables."""
+    user_id = get_current_user()
+    if not user_id:
+        return jsonify({"error": "Auth requis"}), 401
+    try:
+        rows = run_query("""
+            SELECT
+                t.Transaction_ID,
+                t.Montant,
+                t.Montant_Signe,
+                d.Date        AS date_val,
+                d.Année       AS annee,
+                d.Mois        AS mois,
+                d.Trimestre   AS trimestre,
+                d.YearMonth   AS year_month,
+                dep.NomDepartement  AS departement,
+                tt.TypeTransaction  AS type_transaction,
+                td.TypeDepense      AS type_depense,
+                r.NomResponsable    AS responsable,
+                cf.NomClientFournisseur AS client_fournisseur,
+                cf.Type         AS cf_type,
+                p.NomProjet     AS projet
+            FROM transactions t
+            LEFT JOIN `date`             d   ON d.Date_ID             = t.Date_ID
+            LEFT JOIN departement        dep ON dep.Departement_ID     = t.Departement_ID
+            LEFT JOIN typetransaction    tt  ON tt.TypeTransaction_ID  = t.TypeTransaction_ID
+            LEFT JOIN typedepense        td  ON td.TypeDepense_ID      = t.TypeDepense_ID
+            LEFT JOIN responsable        r   ON r.Responsable_ID       = t.Responsable_ID
+            LEFT JOIN clientfournisseur  cf  ON cf.ClientFournisseur_ID= t.ClientFournisseur_ID
+            LEFT JOIN projet             p   ON p.Projet_ID            = t.Projet_ID
+            ORDER BY d.Date DESC
+            LIMIT 50000
+        """)
+        safe = make_json_safe(rows)
+        return jsonify({"success": True, "total": len(safe), "data": safe})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e), "detail": traceback.format_exc()}), 500
+
+
+@app.route("/api/analytics/kpi-refresh", methods=["POST"])
+def kpi_refresh():
+    """Compute KPIs from transactions and (re)save them to valeur_kpi."""
+    user_id = get_current_user()
+    if not user_id:
+        return jsonify({"error": "Auth requis"}), 401
+    try:
+        rows = run_query("""
+            SELECT
+                t.Montant, t.Montant_Signe,
+                d.Année AS annee, d.Trimestre AS trimestre, d.YearMonth AS year_month,
+                dep.NomDepartement AS departement, dep.Departement_ID,
+                tt.TypeTransaction AS type_transaction,
+                td.TypeDepense AS type_depense
+            FROM transactions t
+            LEFT JOIN `date`          d   ON d.Date_ID           = t.Date_ID
+            LEFT JOIN departement     dep ON dep.Departement_ID   = t.Departement_ID
+            LEFT JOIN typetransaction tt  ON tt.TypeTransaction_ID= t.TypeTransaction_ID
+            LEFT JOIN typedepense     td  ON td.TypeDepense_ID    = t.TypeDepense_ID
+        """)
+        if not rows:
+            return jsonify({"success": True, "inserted": 0, "message": "Aucune transaction à agréger"})
+
+        kpis_to_save = []
+        total_montant = sum(float(r.get("Montant") or 0) for r in rows)
+        total_signe   = sum(float(r.get("Montant_Signe") or 0) for r in rows)
+        revenus  = sum(float(r.get("Montant_Signe") or 0) for r in rows if (r.get("Montant_Signe") or 0) > 0)
+        depenses = abs(sum(float(r.get("Montant_Signe") or 0) for r in rows if (r.get("Montant_Signe") or 0) < 0))
+        n = len(rows)
+
+        kpis_to_save += [
+            {"kpiNom": "CA_Total",       "periode": "global", "valeur": round(total_montant, 2), "stat_type": "sum"},
+            {"kpiNom": "Solde_Net",      "periode": "global", "valeur": round(total_signe, 2),   "stat_type": "sum"},
+            {"kpiNom": "Revenus",        "periode": "global", "valeur": round(revenus, 2),        "stat_type": "sum"},
+            {"kpiNom": "Dépenses",       "periode": "global", "valeur": round(depenses, 2),       "stat_type": "sum"},
+            {"kpiNom": "Nb_Transactions","periode": "global", "valeur": n,                        "stat_type": "count"},
+            {"kpiNom": "Valeur_Moyenne", "periode": "global", "valeur": round(total_montant / n, 2) if n else 0, "stat_type": "avg"},
+            {"kpiNom": "Ratio_Dep_Rev",  "periode": "global", "valeur": round(depenses / revenus * 100, 2) if revenus else 0, "stat_type": "ratio"},
+        ]
+
+        # By quarter
+        from collections import defaultdict
+        q_data = defaultdict(list)
+        for r in rows:
+            key = f"Q{r.get('trimestre') or 0}_{r.get('annee') or 0}"
+            q_data[key].append(float(r.get("Montant") or 0))
+        for k, vals in q_data.items():
+            kpis_to_save.append({"kpiNom": f"CA_{k}", "periode": k, "valeur": round(sum(vals), 2), "stat_type": "sum"})
+
+        # By department
+        dep_data = defaultdict(lambda: {"montant": [], "id": None})
+        for r in rows:
+            dep = r.get("departement") or "Inconnu"
+            dep_data[dep]["montant"].append(float(r.get("Montant") or 0))
+            dep_data[dep]["id"] = r.get("Departement_ID")
+        for dep, d in dep_data.items():
+            kpis_to_save.append({
+                "kpiNom": f"CA_{dep}", "periode": "global",
+                "valeur": round(sum(d["montant"]), 2),
+                "departementId": d["id"], "stat_type": "sum"
+            })
+
+        # By type transaction
+        tt_data = defaultdict(list)
+        for r in rows:
+            tt = r.get("type_transaction") or "Autre"
+            tt_data[tt].append(float(r.get("Montant") or 0))
+        for tt, vals in tt_data.items():
+            kpis_to_save.append({"kpiNom": f"Vol_{tt}", "periode": "global", "valeur": round(sum(vals), 2), "stat_type": "sum"})
+
+        # By type depense
+        td_data = defaultdict(list)
+        for r in rows:
+            td = r.get("type_depense") or "Autre"
+            td_data[td].append(float(r.get("Montant") or 0))
+        for td, vals in td_data.items():
+            kpis_to_save.append({"kpiNom": f"Dep_{td}", "periode": "global", "valeur": round(sum(vals), 2), "stat_type": "sum"})
+
+        # Compute evolution % vs previous period using YearMonth grouping
+        ym_data = defaultdict(list)
+        for r in rows:
+            ym = r.get("year_month") or "0000-00"
+            ym_data[ym].append(float(r.get("Montant") or 0))
+        sorted_ym = sorted(ym_data.keys())
+        for i, ym in enumerate(sorted_ym):
+            val = round(sum(ym_data[ym]), 2)
+            prev_val = round(sum(ym_data[sorted_ym[i-1]]), 2) if i > 0 else val
+            evo = round((val - prev_val) / prev_val * 100, 2) if prev_val else 0
+            kpis_to_save.append({"kpiNom": "CA_Mensuel", "periode": ym, "valeur": val, "evolution": evo, "stat_type": "sum"})
+
+        # Save to valeur_kpi (replace=True per period+nom)
+        conn = get_connection()
+        cursor = conn.cursor()
+        inserted = 0
+        for kpi in kpis_to_save:
+            nom    = kpi.get("kpiNom", "")
+            per    = kpi.get("periode", "global")
+            valeur = float(kpi.get("valeur", 0))
+            evo    = float(kpi.get("evolution", 0))
+            dept   = kpi.get("departementId")
+            stype  = kpi.get("stat_type", "sum")
+            cursor.execute("DELETE FROM valeur_kpi WHERE kpiNom=%s AND periode=%s", (nom, per))
+            cursor.execute(
+                "INSERT INTO valeur_kpi (kpiNom, periode, valeur, evolution, departementId, source, stat_type) VALUES (%s,%s,%s,%s,%s,'etl_auto',%s)",
+                (nom, per, valeur, evo, dept, stype)
+            )
+            inserted += 1
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "inserted": inserted})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e), "detail": traceback.format_exc()}), 500
 
 
 # -------------------------------------------------------------------
